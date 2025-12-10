@@ -20,3 +20,16 @@ jobs:
         run: echo "Running smoke tests on Staging..."
       - name: Report Success
         run: echo "All tests passed!"
+      - name: Set Commit Status
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/statuses/${{ github.sha }} \
+            -f state='success' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+            -f description='Staging tests passed' \
+            -f context='Staging Verified'

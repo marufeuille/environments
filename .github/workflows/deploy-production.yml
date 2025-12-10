@@ -9,18 +9,42 @@ jobs:
   notify_approval:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Staging Status
+        id: check_status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          STATUS=$(gh api repos/${{ github.repository }}/commits/${{ github.sha }}/statuses \
+            --jq 'first(.[] | select(.context == "Staging Verified")) | .state')
+          
+          if [ "$STATUS" == "success" ]; then
+            echo "STAGING_VERIFIED=true" >> $GITHUB_ENV
+          else
+            echo "STAGING_VERIFIED=false" >> $GITHUB_ENV
+          fi
+
       - name: Notify Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           RELEASE_BODY: ${{ github.event.release.body }}
         run: |
+          if [ "$STAGING_VERIFIED" == "true" ]; then
+            ICON="✅"
+            STATUS_TEXT="Staging Verification Passed"
+          else
+            ICON="⚠️"
+            STATUS_TEXT="STAGING NOT VERIFIED"
+          fi
+
           jq -n \
             --arg body "$RELEASE_BODY" \
             --arg ref "${{ github.ref_name }}" \
             --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --arg commit_url "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
             --arg commit_sha "${{ github.sha }}" \
-            '{text: "Production deployment for *\($ref)* requires approval.\n\n*Release Notes:*\n\($body)\n\nCommit: <\($commit_url)|\($commit_sha)>\n\nPlease verify this commit is deployed on Staging.\n<\($url)|Approve Deployment>"}' > payload.json
+            --arg icon "$ICON" \
+            --arg status_text "$STATUS_TEXT" \
+            '{text: "Production deployment for *\($ref)* requires approval.\n\n*Staging Status:* \($icon) \($status_text)\n\n*Release Notes:*\n\($body)\n\nCommit: <\($commit_url)|\($commit_sha)>\n\n<\($url)|Approve Deployment>"}' > payload.json
 
           curl -X POST -H 'Content-type: application/json' -d @payload.json $SLACK_WEBHOOK_URL
 
