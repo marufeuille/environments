@@ -2,9 +2,8 @@ name: Deploy-Production
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 jobs:
   notify_approval:
@@ -14,7 +13,10 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Production deployment for *${{ github.ref_name }}* requires approval.\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n\nPlease verify this commit is deployed on Staging.\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Approve Deployment>"}' $SLACK_WEBHOOK_URL
+          # Escape newlines in the release body for JSON
+          RELEASE_BODY=$(echo "${{ github.event.release.body }}" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+          
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Production deployment for *${{ github.ref_name }}* requires approval.\\n\\n*Release Notes:*\\n$RELEASE_BODY\\n\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\\n\\nPlease verify this commit is deployed on Staging.\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Approve Deployment>\"}" $SLACK_WEBHOOK_URL
 
   deploy_production:
     needs: notify_approval
