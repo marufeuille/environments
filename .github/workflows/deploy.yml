@@ -1,0 +1,21 @@
+name: Deploy-Staging-Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy_staging:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - run: echo deploy staging
+      - run: echo "Staging!!"
+  
+  deploy_production:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - run: echo deploy production
+      - run: echo "PROD!!"
