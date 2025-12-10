@@ -1,0 +1,13 @@
+name: Deploy-Staging
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy_staging:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - run: echo deploy staging
+      - run: echo "Staging!!"

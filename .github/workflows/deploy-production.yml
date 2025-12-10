@@ -1,0 +1,26 @@
+name: Deploy-Production
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  notify_approval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"Production deployment for *${{ github.ref_name }}* requires approval.\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n\nPlease verify this commit is deployed on Staging.\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Approve Deployment>"}' $SLACK_WEBHOOK_URL
+
+  deploy_production:
+    needs: notify_approval
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - run: echo deploy production
+      - run: echo "PROD!!"
