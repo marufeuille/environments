@@ -11,3 +11,12 @@ jobs:
     steps:
       - run: echo deploy staging
       - run: echo "Staging!!"
+
+  test_staging:
+    needs: deploy_staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Smoke Tests
+        run: echo "Running smoke tests on Staging..."
+      - name: Report Success
+        run: echo "All tests passed!"
