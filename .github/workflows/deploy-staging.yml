@@ -3,6 +3,10 @@ name: Deploy-Staging
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   deploy_staging:
     runs-on: ubuntu-latest
